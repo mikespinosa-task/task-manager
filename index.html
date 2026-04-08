@@ -13,8 +13,8 @@
   --s3:        #eaeaed;
   --border:    #e0e0e4;
   --border2:   #d0d0d6;
-  --sidebar-bg:#111114;
-  --header-bg: #111114;
+  --sidebar-bg:#0a0a0b;
+  --header-bg: #0a0a0b;
   --accent:    #00cc6a;
   --accent2:   #00b35c;
   --adim:      rgba(0,204,106,0.12);
@@ -130,17 +130,21 @@ select option{background:#fff}
 textarea{resize:vertical;min-height:80px;line-height:1.6}
 
 /* TOOLBAR */
-.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
-.search-wrap{flex:1;min-width:160px;position:relative}
-.search-wrap input{padding-left:32px}
+.toolbar{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.toolbar-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.toolbar-bottom{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.search-wrap{width:220px;min-width:140px;position:relative;flex-shrink:0}
+.search-wrap input{padding-left:32px;height:32px;padding-top:0;padding-bottom:0}
 .si{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:13px}
-.chip-group{display:flex;gap:5px;flex-wrap:wrap}
-.chip{font-family:'DM Mono',monospace;font-size:10px;padding:4px 11px;border-radius:20px;border:1px solid var(--border2);background:var(--s1);color:var(--muted);cursor:pointer;transition:all 0.15s}
+.chip-scroll{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+.chip{font-family:'DM Mono',monospace;font-size:10px;padding:4px 11px;border-radius:20px;border:1px solid var(--border2);background:var(--s1);color:var(--muted);cursor:pointer;transition:all 0.15s;white-space:nowrap}
 .chip:hover{border-color:var(--mid);color:var(--text)}
 .chip.on{background:rgba(0,204,106,0.1);border-color:var(--accent);color:var(--accent)}
-.chip.h.on{background:rgba(224,53,53,0.08);border-color:var(--high);color:var(--high)}
-.chip.m.on{background:rgba(224,136,0,0.08);border-color:var(--warn);color:var(--warn)}
-.chip.l.on{background:rgba(0,170,85,0.08);border-color:var(--low);color:var(--low)}
+.toolbar-divider{width:1px;height:22px;background:var(--border2);flex-shrink:0;margin:0 2px}
+.filter-select{background:var(--s1);border:1px solid var(--border2);border-radius:20px;color:var(--mid);font-family:'DM Mono',monospace;font-size:10px;padding:4px 26px 4px 12px;outline:none;cursor:pointer;transition:all 0.15s;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23aaa'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;height:28px;flex-shrink:0}
+.filter-select:focus{border-color:var(--accent);color:var(--text)}
+.filter-select.hasval{border-color:var(--accent);color:var(--accent);background-color:rgba(0,204,106,0.06)}
+.filter-label{font-size:10px;color:var(--muted);font-family:'Syne',sans-serif;font-weight:700;letter-spacing:0.5px;white-space:nowrap}
 
 /* TASK LIST */
 #taskList,#doneTasks{display:flex;flex-direction:column;gap:5px}
@@ -368,19 +372,30 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
       <div class="sec-content">
         <div class="toolbar">
-          <div class="search-wrap">
-            <span class="si">⌕</span>
-            <input type="text" id="searchInput" placeholder="Buscar tarea..." oninput="renderTareas()">
+          <!-- Fila 1: búsqueda + dropdowns -->
+          <div class="toolbar-top">
+            <div class="search-wrap">
+              <span class="si">⌕</span>
+              <input type="text" id="searchInput" placeholder="Buscar tarea..." oninput="filters.search=this.value;updateClearBtn();renderTareas()">
+            </div>
+            <div class="toolbar-divider"></div>
+            <select class="filter-select" id="fPrioridad" onchange="applyDropFilter('prioridad',this)">
+              <option value="">Prioridad</option>
+              <option value="Alta">🔴 Alta</option>
+              <option value="Media">🟡 Media</option>
+              <option value="Baja">🟢 Baja</option>
+            </select>
+            <select class="filter-select" id="fEstado" onchange="applyDropFilter('estado',this)">
+              <option value="">Estado</option>
+              <option value="Pendiente">Pendiente</option>
+              <option value="Progreso">En progreso</option>
+            </select>
+            <button class="chip" id="clearFiltersBtn" onclick="clearFilters()" style="display:none;border-color:var(--high);color:var(--high)">✕ Limpiar</button>
           </div>
-          <div class="chip-group" id="clientFilter"></div>
-          <div class="chip-group">
-            <div class="chip h" id="fAlta" onclick="toggleFilter('Alta')">Alta</div>
-            <div class="chip m" id="fMedia" onclick="toggleFilter('Media')">Media</div>
-            <div class="chip l" id="fBaja" onclick="toggleFilter('Baja')">Baja</div>
-          </div>
-          <div class="chip-group">
-            <div class="chip" id="fPendiente" onclick="toggleFilter('Pendiente')">Pendiente</div>
-            <div class="chip" id="fProgreso" onclick="toggleFilter('Progreso')">En progreso</div>
+          <!-- Fila 2: chips clientes -->
+          <div class="toolbar-bottom">
+            <span class="filter-label">Cliente:</span>
+            <div class="chip-scroll" id="clientFilter"></div>
           </div>
         </div>
         <div id="taskList"></div>
@@ -583,12 +598,29 @@ function filterClient(name,el){
   el.classList.add('on');renderTareas();
 }
 
-function toggleFilter(val){
-  const priArr=['Alta','Media','Baja'],stArr=['Pendiente','Progreso'];
-  let arr=priArr.includes(val)?filters.prioridad:filters.estado;
-  const idx=arr.indexOf(val);if(idx>-1)arr.splice(idx,1);else arr.push(val);
-  const maps={Alta:'fAlta',Media:'fMedia',Baja:'fBaja',Pendiente:'fPendiente',Progreso:'fProgreso'};
-  document.getElementById(maps[val]).classList.toggle('on');renderTareas();
+function applyDropFilter(type, sel){
+  const val = sel.value;
+  if(type==='prioridad') filters.prioridad = val ? [val] : [];
+  if(type==='estado')    filters.estado    = val ? [val] : [];
+  sel.classList.toggle('hasval', !!val);
+  updateClearBtn();
+  renderTareas();
+}
+
+function clearFilters(){
+  filters.prioridad=[];filters.estado=[];filters.cliente='';filters.search='';
+  document.getElementById('searchInput').value='';
+  document.getElementById('fPrioridad').value='';
+  document.getElementById('fEstado').value='';
+  document.getElementById('fPrioridad').classList.remove('hasval');
+  document.getElementById('fEstado').classList.remove('hasval');
+  document.querySelectorAll('#clientFilter .chip').forEach((c,i)=>{c.classList.toggle('on',i===0);});
+  updateClearBtn();renderTareas();
+}
+
+function updateClearBtn(){
+  const active = filters.prioridad.length||filters.estado.length||filters.cliente||filters.search;
+  document.getElementById('clearFiltersBtn').style.display = active ? 'inline-flex' : 'none';
 }
 
 function filterTareas(list){
