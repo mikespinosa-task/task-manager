@@ -331,6 +331,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       <div class="sync-dot" id="syncDot"></div>
       <span id="syncLabel">conectando...</span>
     </div>
+    <button class="icon-btn" onclick="init()" title="Sincronizar / Recargar datos" style="font-size:16px">↻</button>
     <button class="icon-btn" onclick="openConfig()" title="Configuración">⚙</button>
   </div>
 </div>
@@ -481,7 +482,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       </div>
       <div class="modal-row">
         <div class="field"><label>Cliente</label><select id="t_cliente"></select></div>
-        <div class="field"><label>Fecha límite</label><input type="date" id="t_fecha"></div>
+        <div class="field"><label>Fecha limite</label><input type="date" id="t_fecha"></div>
       </div>
     </div>
     <div class="modal-actions">
@@ -645,8 +646,8 @@ function renderTareas(){
 
 function taskCardHTML(t,done=false){
   const color=getClientColor(t['Cliente']);
-  const dateVal=toInputDate(t['Fecha límite']);
-  const dateStr=formatDate(t['Fecha límite']);
+  const dateVal=toInputDate(t['Fecha limite']);
+  const dateStr=formatDate(t['Fecha limite']);
   const hoy=new Date().toISOString().split('T')[0];
   const isOver=dateVal&&dateVal<hoy&&t['Estado']!=='Completada';
   const estado=t['Estado']||'Pendiente';
@@ -738,7 +739,7 @@ async function openNewTask(){populateClientSelects();['t_tarea','t_notas'].forEa
 async function saveTarea(){
   const tarea=document.getElementById('t_tarea').value.trim();
   if(!tarea){toast('El nombre es requerido',true);return;}
-  const data={action:'addTarea','Tarea':tarea,'Notas':document.getElementById('t_notas').value.trim(),'Prioridad':document.getElementById('t_prioridad').value,'Estado':document.getElementById('t_estado').value,'Cliente':document.getElementById('t_cliente').value,'Fecha límite':document.getElementById('t_fecha').value};
+  const data={action:'addTarea','Tarea':tarea,'Notas':document.getElementById('t_notas').value.trim(),'Prioridad':document.getElementById('t_prioridad').value,'Estado':document.getElementById('t_estado').value,'Cliente':document.getElementById('t_cliente').value,'Fecha limite':document.getElementById('t_fecha').value};
   closeModal('modalTarea');setSync('loading','guardando...');
   try{await postScript(data);toast('Tarea guardada ✓');await init();}catch(e){toast('Error al guardar',true);}
 }
@@ -811,7 +812,7 @@ async function saveAITasks(row,tareas,cliente){
   const selected=Array.from(items).filter(el=>el.classList.contains('selected')).map(el=>tareas[parseInt(el.id.split('-')[2])]);
   if(!selected.length){toast('Selecciona al menos una',true);return;}
   setSync('loading','guardando...');
-  try{for(const t of selected)await postScript({action:'addTarea','Tarea':t.tarea,'Notas':t.notas||'','Prioridad':t.prioridad,'Estado':'Pendiente','Cliente':cliente,'Fecha límite':''});
+  try{for(const t of selected)await postScript({action:'addTarea','Tarea':t.tarea,'Notas':t.notas||'','Prioridad':t.prioridad,'Estado':'Pendiente','Cliente':cliente,'Fecha limite':''});
   toast(`${selected.length} tarea(s) guardadas ✓`);await init();document.getElementById(`air-${row}`).classList.remove('show');}
   catch(e){toast('Error al guardar',true);}
 }
@@ -836,8 +837,8 @@ let chatHistory=[];
 function getContextSummary(){
   const activas=state.tareas.filter(t=>t['Estado']!=='Completada');
   const hoy=new Date().toISOString().split('T')[0];
-  const atrasadas=activas.filter(t=>t['Fecha límite']&&t['Fecha límite']<hoy);
-  return `Eres el asistente de tareas de Michael Espinosa, estratega digital en Bogotá.\n\nCLIENTES: ${state.clientes.map(c=>c['Nombre']).join(', ')}\n\nTAREAS ACTIVAS (${activas.length}):\n${activas.map(t=>`- [${t['Prioridad']}][${t['Estado']}] ${t['Tarea']} | ${t['Cliente']} | ${t['Fecha límite']||'sin fecha'}`).join('\n')}\n\nATRASADAS: ${atrasadas.length?atrasadas.map(t=>`${t['Tarea']} (${t['Cliente']})`).join(', '):'ninguna'}\n\nÚLTIMAS REUNIONES:\n${[...state.reuniones].sort((a,b)=>b['Fecha']>a['Fecha']?1:-1).slice(0,8).map(r=>`- ${r['Cliente']} | ${r['Fecha']} | ${(r['Notas']||'').substring(0,80)}`).join('\n')}\n\nResponde en español, conciso y útil.`;
+  const atrasadas=activas.filter(t=>t['Fecha limite']&&t['Fecha limite']<hoy);
+  return `Eres el asistente de tareas de Michael Espinosa, estratega digital en Bogotá.\n\nCLIENTES: ${state.clientes.map(c=>c['Nombre']).join(', ')}\n\nTAREAS ACTIVAS (${activas.length}):\n${activas.map(t=>`- [${t['Prioridad']}][${t['Estado']}] ${t['Tarea']} | ${t['Cliente']} | ${t['Fecha limite']||'sin fecha'}`).join('\n')}\n\nATRASADAS: ${atrasadas.length?atrasadas.map(t=>`${t['Tarea']} (${t['Cliente']})`).join(', '):'ninguna'}\n\nÚLTIMAS REUNIONES:\n${[...state.reuniones].sort((a,b)=>b['Fecha']>a['Fecha']?1:-1).slice(0,8).map(r=>`- ${r['Cliente']} | ${r['Fecha']} | ${(r['Notas']||'').substring(0,80)}`).join('\n')}\n\nResponde en español, conciso y útil.`;
 }
 
 async function sendChat(){
@@ -905,9 +906,9 @@ function toInputDate(d){
 async function updateFecha(row,val){
   setSync('loading','guardando...');
   try{
-    await postScript({action:'updateTarea',row,'Fecha límite':val});
+    await postScript({action:'updateTarea',row,'Fecha limite':val});
     const t=state.tareas.find(t=>t._row===row);
-    if(t)t['Fecha límite']=val;
+    if(t)t['Fecha limite']=val;
     setSync('ok','sincronizado');
     renderTareas();
     toast('Fecha actualizada ✓');
