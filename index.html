@@ -545,7 +545,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
 <div class="toast" id="toast"><div class="toast-dot ok" id="toastDot"></div><span id="toastMsg"></span></div>
 
 <script>
-const SCRIPT_URL = localStorage.getItem('scriptUrl') || 'https://script.google.com/macros/s/AKfycbyoT5sAC1JPhN67Nq2I1i9CSkyuZVzlb5VB4oYQJKZF-rWGen9tAgYO0vdK_ub6NWnb/exec';
+const SCRIPT_URL = localStorage.getItem('scriptUrl') || 'https://script.google.com/macros/s/AKfycbwLz24ARQsu7JuGEwlUY97oAFGE39m4ZVV7VM10td6Lf6eSD3N7EGSxDVkSemtKbWqf/exec';
 let API_KEY = localStorage.getItem('anthropicKey') || '';
 let state = { clientes:[], tareas:[], reuniones:[] };
 let filters = { search:'', prioridad:[], estado:[], cliente:'' };
@@ -923,7 +923,8 @@ function showDateInput(row){
 function hideDateInput(row){
   const inp=document.getElementById(`di-${row}`);
   if(inp)setTimeout(()=>inp.style.display='none',200);
-}const opts=state.clientes.map(c=>`<option value="${c['Nombre']}">${c['Nombre']}</option>`).join('');['t_cliente','r_cliente'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=opts;});}
+}
+function populateClientSelects(){const opts=state.clientes.map(c=>`<option value="${c['Nombre']}">${c['Nombre']}</option>`).join('');['t_cliente','r_cliente'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=opts;});}
 async function postScript(data){const url=localStorage.getItem('scriptUrl')||SCRIPT_URL;const res=await fetch(url,{method:'POST',body:JSON.stringify(data)});return res.json();}
 function formatDate(d){
   if(!d)return'';
