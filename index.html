@@ -807,7 +807,7 @@ function getClientColor(name){
 
 function renderClientFilter(){
   const el=document.getElementById('clientFilter');
-  el.innerHTML='<div class="chip on" onclick="filterClient('',this)">Todos</div>'+
+  el.innerHTML='<div class="chip on" onclick="filterClient(\'\',this)">Todos</div>'+
     state.clientes.map(c=>`<div class="chip" onclick="filterClient('${c['Nombre']}',this)" style="border-color:${getClientColor(c['Nombre'])}60">${c['Nombre']}</div>`).join('');
 }
 
