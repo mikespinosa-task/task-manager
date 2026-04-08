@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mike · Task Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #0a0a0b;
+  --s1:        #111114;
+  --s2:        #18181d;
+  --s3:        #1f1f26;
+  --border:    #222229;
+  --border2:   #2e2e38;
+  --accent:    #00ff87;
+  --accent2:   #00e57a;
+  --adim:      rgba(0,255,135,0.10);
+  --adim2:     rgba(0,255,135,0.05);
+  --text:      #e2e2ec;
+  --mid:       #8888a0;
+  --muted:     #44444f;
+  --high:      #ff4d4d;
+  --warn:      #ffaa00;
+  --low:       #00ff87;
+  --blue:      #4d9fff;
+  --orange:    #ffaa00;
+  --green:     #00ff87;
+  --purple:    #b066ff;
+  --red:       #ff4d4d;
+  --cyan:      #00e5ff;
+  --pink:      #ff66b3;
+  --yellow:    #ffe066;
+  --r:         10px;
+  --rs:        6px;
+  --sidebar:   220px;
+  --header:    52px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;display:flex;flex-direction:column}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── HEADER ── */
+#header{
+  height:var(--header);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px 0 0;
+  background:var(--bg);
+  flex-shrink:0;
+  z-index:50;
+}
+.logo-area{
+  width:var(--sidebar);
+  padding:0 20px;
+  display:flex;align-items:center;gap:10px;
+  border-right:1px solid var(--border);
+  height:100%;
+}
+.logo-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent);flex-shrink:0}
+.logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--text);letter-spacing:-0.3px}
+.logo-text span{color:var(--accent)}
+.header-right{display:flex;align-items:center;gap:12px}
+.sync-status{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:5px;letter-spacing:0.5px}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background 0.3s}
+.sync-dot.ok{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.sync-dot.loading{background:var(--warn);animation:pulse 1s infinite}
+.sync-dot.error{background:var(--high)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* CONFIG ICON */
+.icon-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:6px;border-radius:var(--rs);font-size:15px;transition:all 0.15s;line-height:1;display:flex;align-items:center}
+.icon-btn:hover{background:var(--s2);color:var(--text)}
+
+/* ── BODY ── */
+#body{display:flex;flex:1;overflow:hidden}
+
+/* ── SIDEBAR ── */
+#sidebar{
+  width:var(--sidebar);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  background:var(--s1);
+  flex-shrink:0;
+  overflow-y:auto;
+}
+.nav-section{padding:16px 12px 8px;font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-family:'Syne',sans-serif;font-weight:700}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 14px;
+  border-radius:var(--rs);
+  margin:1px 8px;
+  cursor:pointer;
+  color:var(--mid);
+  font-size:12px;
+  transition:all 0.15s;
+  position:relative;
+}
+.nav-item:hover{background:var(--s2);color:var(--text)}
+.nav-item.active{background:var(--adim);color:var(--accent)}
+.nav-item.active::before{content:'';position:absolute;left:-8px;top:50%;transform:translateY(-50%);width:2px;height:16px;background:var(--accent);border-radius:2px;box-shadow:0 0 6px var(--accent)}
+.nav-icon{font-size:14px;width:16px;text-align:center}
+.nav-badge{margin-left:auto;background:var(--s3);border:1px solid var(--border2);border-radius:10px;padding:1px 7px;font-size:10px;color:var(--mid)}
+.nav-item.active .nav-badge{background:var(--adim);border-color:var(--accent);color:var(--accent)}
+
+.sidebar-bottom{margin-top:auto;padding:12px;border-top:1px solid var(--border)}
+.btn-new-client{
+  width:100%;background:var(--adim2);border:1px dashed var(--border2);color:var(--mid);
+  border-radius:var(--rs);padding:8px;font-family:'DM Mono',monospace;font-size:11px;
+  cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-new-client:hover{border-color:var(--accent);color:var(--accent);background:var(--adim)}
+
+/* ── MAIN ── */
+#main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.section{display:none;flex-direction:column;height:100%;overflow:hidden}
+.section.active{display:flex}
+
+/* SECTION HEADER */
+.sec-head{
+  padding:20px 28px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.sec-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text);letter-spacing:-0.5px}
+.sec-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* CONTENT AREA */
+.sec-content{flex:1;overflow-y:auto;padding:20px 28px}
+
+/* ── BUTTONS ── */
+.btn{font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.3px;border:none;border-radius:var(--rs);cursor:pointer;padding:8px 16px;transition:all 0.15s;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.btn-accent{background:var(--accent);color:#0a0a0b}
+.btn-accent:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--mid);border:1px solid var(--border2)}
+.btn-ghost:hover{border-color:var(--mid);color:var(--text)}
+.btn-danger{background:rgba(255,77,77,0.1);color:var(--high);border:1px solid rgba(255,77,77,0.2)}
+.btn-danger:hover{background:rgba(255,77,77,0.2)}
+.btn-sm{padding:5px 12px;font-size:10px}
+.btn-ai{background:linear-gradient(135deg,rgba(0,255,135,0.15),rgba(176,102,255,0.15));border:1px solid rgba(0,255,135,0.3);color:var(--accent)}
+.btn-ai:hover{background:linear-gradient(135deg,rgba(0,255,135,0.25),rgba(176,102,255,0.25))}
+
+/* ── FORMS ── */
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+input[type=text],input[type=date],select,textarea{
+  background:var(--s2);border:1px solid var(--border2);border-radius:var(--rs);
+  color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:8px 12px;
+  outline:none;transition:border-color 0.15s,background 0.15s;width:100%;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);background:var(--s3)}
+select option{background:#1a1a20}
+textarea{resize:vertical;min-height:80px;line-height:1.6}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.search-wrap{flex:1;min-width:160px;position:relative}
+.search-wrap input{padding-left:32px}
+.si{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:13px}
+.chip-group{display:flex;gap:5px;flex-wrap:wrap}
+.chip{font-family:'DM Mono',monospace;font-size:10px;padding:4px 11px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.15s}
+.chip:hover{border-color:var(--mid);color:var(--text)}
+.chip.on{background:var(--adim);border-color:var(--accent);color:var(--accent)}
+.chip.h.on{background:rgba(255,77,77,0.1);border-color:var(--high);color:var(--high)}
+.chip.m.on{background:rgba(255,170,0,0.1);border-color:var(--warn);color:var(--warn)}
+.chip.l.on{background:rgba(0,255,135,0.1);border-color:var(--low);color:var(--low)}
+
+/* ── TASK LIST ── */
+#taskList,#doneTasks{display:flex;flex-direction:column;gap:5px}
+.task-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  display:grid;grid-template-columns:18px 1fr auto;gap:12px;align-items:start;
+  padding:12px 14px;transition:border-color 0.15s,opacity 0.2s;
+  animation:fadeUp 0.2s ease;
+  border-left-width:3px;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.task-card:hover{border-color:var(--border2)}
+.task-card.done{opacity:0.4}
+.task-card.done .task-name{text-decoration:line-through;color:var(--muted)}
+
+/* priority borders */
+.task-card.p-Alta{border-left-color:var(--high)}
+.task-card.p-Media{border-left-color:var(--warn)}
+.task-card.p-Baja{border-left-color:var(--low)}
+
+.chk{width:16px;height:16px;border:1.5px solid var(--border2);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:all 0.15s}
+.chk:hover{border-color:var(--accent)}
+.chk.checked{background:var(--accent);border-color:var(--accent)}
+.chk.checked::after{content:'✓';font-size:9px;color:#0a0a0b;font-weight:700}
+
+.task-body{min-width:0}
+.task-name{font-family:'Syne',sans-serif;font-weight:600;font-size:13px;color:var(--text);margin-bottom:5px;word-break:break-word;cursor:pointer}
+.task-name:hover{color:var(--accent)}
+.task-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tag{font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;font-family:'Syne',sans-serif}
+.tag-Alta{background:rgba(255,77,77,0.12);color:var(--high);border:1px solid rgba(255,77,77,0.2)}
+.tag-Media{background:rgba(255,170,0,0.12);color:var(--warn);border:1px solid rgba(255,170,0,0.2)}
+.tag-Baja{background:rgba(0,255,135,0.12);color:var(--low);border:1px solid rgba(0,255,135,0.2)}
+.tag-Pendiente{background:rgba(136,136,160,0.1);color:var(--mid);border:1px solid rgba(136,136,160,0.2)}
+.tag-Progreso{background:rgba(77,159,255,0.12);color:var(--blue);border:1px solid rgba(77,159,255,0.2)}
+.tag-Completada{background:var(--adim);color:var(--accent);border:1px solid rgba(0,255,135,0.2)}
+.task-client-chip{font-size:9px;padding:2px 8px;border-radius:3px;font-weight:600;font-family:'Syne',sans-serif;letter-spacing:0.5px}
+.task-date{font-size:10px;color:var(--muted)}
+.task-date.over{color:var(--high)}
+.task-note-prev{font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:500px;font-style:italic}
+.task-note-full{display:none;margin-top:8px;padding:8px 10px;background:var(--s2);border-radius:var(--rs);font-size:11px;color:var(--mid);line-height:1.7;white-space:pre-wrap}
+.task-note-full.open{display:block}
+
+.task-actions{display:flex;gap:3px;align-self:start}
+.task-status-sel{background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);color:var(--mid);font-family:'DM Mono',monospace;font-size:10px;padding:3px 7px;outline:none;cursor:pointer}
+
+/* add task inline */
+.add-task-bar{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 16px;margin-bottom:14px;
+  transition:border-color 0.2s;
+}
+.add-task-bar:focus-within{border-color:var(--accent)}
+.add-row{display:grid;grid-template-columns:1fr 130px 150px 120px auto;gap:8px;align-items:end}
+.add-notes{margin-top:8px}
+
+/* done section */
+.done-header{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;color:var(--muted);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;font-family:'Syne',sans-serif;font-weight:700;margin:20px 0 8px;padding:8px 0;border-top:1px solid var(--border)}
+.done-header:hover{color:var(--mid)}
+.done-arrow{transition:transform 0.2s;display:inline-block}
+.done-header.open .done-arrow{transform:rotate(90deg)}
+
+/* empty */
+.empty{text-align:center;padding:60px 0;color:var(--muted)}
+.empty-big{font-family:'Syne',sans-serif;font-size:28px;margin-bottom:8px;opacity:0.4}
+.empty-txt{font-size:11px}
+
+/* ── CLIENTS GRID ── */
+.clients-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.client-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px;cursor:pointer;transition:all 0.15s;position:relative;overflow:hidden;
+  border-top-width:3px;
+}
+.client-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.client-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--text);margin-bottom:10px}
+.client-stats{display:flex;gap:12px}
+.cstat{display:flex;flex-direction:column;gap:2px}
+.cstat-val{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:var(--text)}
+.cstat-lab{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.client-last{font-size:10px;color:var(--muted);margin-top:10px}
+
+/* ── REUNIONES ── */
+.reunion-list{display:flex;flex-direction:column;gap:10px}
+.reunion-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.reunion-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;border-bottom:1px solid transparent;transition:border-color 0.15s}
+.reunion-head.open{border-bottom-color:var(--border)}
+.reunion-head:hover{background:var(--s2)}
+.reunion-info{display:flex;align-items:center;gap:10px}
+.reunion-client-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.reunion-title{font-family:'Syne',sans-serif;font-weight:600;font-size:13px;color:var(--text)}
+.reunion-date{font-size:10px;color:var(--muted)}
+.reunion-body{padding:16px;display:none}
+.reunion-body.open{display:block}
+.reunion-notes{width:100%;min-height:120px;font-size:12px;line-height:1.7;margin-bottom:12px}
+.reunion-ai-result{background:var(--s2);border:1px solid var(--border2);border-radius:var(--rs);padding:12px;margin-top:12px;display:none}
+.reunion-ai-result.show{display:block}
+.ai-tasks-list{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.ai-task-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--s3);border-radius:var(--rs);cursor:pointer;border:1px solid transparent;transition:all 0.15s}
+.ai-task-item:hover{border-color:var(--accent)}
+.ai-task-item.selected{border-color:var(--accent);background:var(--adim)}
+.ai-task-check{width:14px;height:14px;border:1.5px solid var(--border2);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.ai-task-item.selected .ai-task-check{background:var(--accent);border-color:var(--accent)}
+.ai-task-item.selected .ai-task-check::after{content:'✓';font-size:8px;color:#0a0a0b;font-weight:700}
+.ai-task-text{font-size:12px;color:var(--text);flex:1}
+.ai-task-pri{font-size:9px;padding:1px 6px;border-radius:2px;font-weight:600;text-transform:uppercase;font-family:'Syne',sans-serif}
+.reunion-summary{background:var(--adim2);border:1px solid rgba(0,255,135,0.15);border-radius:var(--rs);padding:12px;margin-top:10px;font-size:11px;color:var(--mid);line-height:1.7;display:none}
+.reunion-summary.show{display:block}
+.reunion-summary-title{font-family:'Syne',sans-serif;font-size:10px;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+
+/* ── CHAT ── */
+#chatSection{display:none;flex-direction:column;height:100%}
+#chatSection.active{display:flex}
+.chat-messages{flex:1;overflow-y:auto;padding:20px 28px;display:flex;flex-direction:column;gap:14px}
+.msg{display:flex;gap:10px;align-items:flex-start;animation:fadeUp 0.2s ease}
+.msg.user{flex-direction:row-reverse}
+.msg-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;font-family:'Syne',sans-serif;font-weight:700}
+.msg.ai .msg-avatar{background:var(--adim);border:1px solid rgba(0,255,135,0.3);color:var(--accent)}
+.msg.user .msg-avatar{background:var(--s2);border:1px solid var(--border2);color:var(--mid)}
+.msg-bubble{max-width:70%;padding:10px 14px;border-radius:var(--r);font-size:12px;line-height:1.7}
+.msg.ai .msg-bubble{background:var(--s1);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:3px}
+.msg.user .msg-bubble{background:var(--adim);border:1px solid rgba(0,255,135,0.2);color:var(--text);border-bottom-right-radius:3px}
+.msg-bubble p{margin-bottom:6px}
+.msg-bubble p:last-child{margin-bottom:0}
+.msg-bubble strong{color:var(--accent);font-weight:600}
+.typing{display:flex;gap:4px;align-items:center;padding:4px 0}
+.typing span{width:5px;height:5px;background:var(--accent);border-radius:50%;animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:0.2s}
+.typing span:nth-child(3){animation-delay:0.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.chat-input-area{border-top:1px solid var(--border);padding:16px 28px;display:flex;gap:10px;align-items:flex-end;flex-shrink:0}
+.chat-input-area textarea{flex:1;min-height:44px;max-height:120px;resize:none;font-size:12px;padding:10px 14px;border-radius:var(--r)}
+.chat-suggestions{padding:0 28px 12px;display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
+.suggest-chip{font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.15s;font-family:'DM Mono',monospace}
+.suggest-chip:hover{border-color:var(--accent);color:var(--accent);background:var(--adim)}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);padding:26px;width:100%;max-width:480px;animation:modalIn 0.2s ease}
+@keyframes modalIn{from{transform:scale(0.94);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;margin-bottom:18px;color:var(--text)}
+.modal-fields{display:flex;flex-direction:column;gap:10px}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--s1);border:1px solid var(--border2);border-radius:var(--rs);padding:10px 16px;font-size:11px;color:var(--text);z-index:400;opacity:0;transform:translateY(8px);transition:all 0.25s;pointer-events:none;display:flex;align-items:center;gap:8px;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.toast-dot.ok{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.toast-dot.err{background:var(--high)}
+
+/* CONFIG PANEL */
+.cfg-panel{background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);padding:26px;width:100%;max-width:420px;animation:modalIn 0.2s ease}
+.cfg-title{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;margin-bottom:18px;color:var(--text)}
+.cfg-fields{display:flex;flex-direction:column;gap:12px}
+
+/* AI badge */
+.ai-badge{font-size:9px;padding:2px 6px;border-radius:3px;background:linear-gradient(135deg,var(--adim),rgba(176,102,255,0.15));border:1px solid rgba(0,255,135,0.3);color:var(--accent);font-family:'Syne',sans-serif;font-weight:700;letter-spacing:0.5px}
+
+/* loading overlay */
+.loading-bar{position:fixed;top:0;left:0;height:2px;background:var(--accent);width:0;z-index:500;transition:width 0.3s,opacity 0.3s;box-shadow:0 0 8px var(--accent)}
+.loading-bar.active{width:80%}
+.loading-bar.done{width:100%;opacity:0}
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loadingBar"></div>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="logo-area">
+    <div class="logo-dot"></div>
+    <div class="logo-text">task<span>mgr</span></div>
+  </div>
+  <div class="header-right">
+    <div class="sync-status">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncLabel">conectando...</span>
+    </div>
+    <button class="icon-btn" onclick="openConfig()" title="Configuración">⚙</button>
+  </div>
+</div>
+
+<!-- BODY -->
+<div id="body">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="nav-section">Principal</div>
+    <div class="nav-item active" data-section="tareas" onclick="nav(this)">
+      <span class="nav-icon">✦</span> Tareas
+      <span class="nav-badge" id="badge-tareas">0</span>
+    </div>
+    <div class="nav-item" data-section="clientes" onclick="nav(this)">
+      <span class="nav-icon">◈</span> Clientes
+      <span class="nav-badge" id="badge-clientes">0</span>
+    </div>
+    <div class="nav-section">IA</div>
+    <div class="nav-item" data-section="reuniones" onclick="nav(this)">
+      <span class="nav-icon">◎</span> Reuniones
+      <span class="nav-badge" id="badge-reuniones">0</span>
+    </div>
+    <div class="nav-item" data-section="chat" onclick="nav(this)">
+      <span class="nav-icon">◇</span> Chat IA <span class="ai-badge" style="margin-left:2px">AI</span>
+    </div>
+    <div class="sidebar-bottom">
+      <button class="btn-new-client" onclick="openNewClient()">+ Nuevo cliente</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- ══ TAREAS ══ -->
+    <div class="section active" id="sec-tareas">
+      <div class="sec-head">
+        <div>
+          <div class="sec-title">Tareas</div>
+          <div class="sec-sub" id="tareas-sub">cargando...</div>
+        </div>
+        <button class="btn btn-accent" onclick="openNewTask()">+ Nueva tarea</button>
+      </div>
+      <div class="sec-content">
+        <!-- toolbar -->
+        <div class="toolbar">
+          <div class="search-wrap">
+            <span class="si">⌕</span>
+            <input type="text" id="searchInput" placeholder="Buscar tarea..." oninput="renderTareas()">
+          </div>
+          <div class="chip-group" id="clientFilter"></div>
+          <div class="chip-group">
+            <div class="chip h" id="fAlta" onclick="toggleFilter('Alta')">Alta</div>
+            <div class="chip m" id="fMedia" onclick="toggleFilter('Media')">Media</div>
+            <div class="chip l" id="fBaja" onclick="toggleFilter('Baja')">Baja</div>
+          </div>
+          <div class="chip-group">
+            <div class="chip" id="fPendiente" onclick="toggleFilter('Pendiente')">Pendiente</div>
+            <div class="chip" id="fProgreso" onclick="toggleFilter('Progreso')">En progreso</div>
+          </div>
+        </div>
+        <!-- list -->
+        <div id="taskList"></div>
+        <!-- done toggle -->
+        <div class="done-header" id="doneHeader" onclick="toggleDone(this)">
+          <span class="done-arrow">▶</span> Completadas <span class="nav-badge" id="doneCount" style="margin-left:4px">0</span>
+        </div>
+        <div id="doneTasks"></div>
+      </div>
+    </div>
+
+    <!-- ══ CLIENTES ══ -->
+    <div class="section" id="sec-clientes">
+      <div class="sec-head">
+        <div>
+          <div class="sec-title">Clientes</div>
+          <div class="sec-sub">Gestiona tus clientes y proyectos</div>
+        </div>
+        <button class="btn btn-accent" onclick="openNewClient()">+ Nuevo cliente</button>
+      </div>
+      <div class="sec-content">
+        <div class="clients-grid" id="clientsGrid"></div>
+      </div>
+    </div>
+
+    <!-- ══ REUNIONES ══ -->
+    <div class="section" id="sec-reuniones">
+      <div class="sec-head">
+        <div>
+          <div class="sec-title">Reuniones</div>
+          <div class="sec-sub">Notas y generación de tareas con IA</div>
+        </div>
+        <button class="btn btn-accent" onclick="openNewReunion()">+ Nueva reunión</button>
+      </div>
+      <div class="sec-content">
+        <div class="reunion-list" id="reunionList"></div>
+      </div>
+    </div>
+
+    <!-- ══ CHAT ══ -->
+    <div class="section" id="sec-chat" id="chatSection">
+      <div class="sec-head">
+        <div>
+          <div class="sec-title">Chat IA <span class="ai-badge" style="font-size:10px;vertical-align:middle">AI</span></div>
+          <div class="sec-sub">Pregúntame sobre tus tareas, clientes y reuniones</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="clearChat()">Limpiar chat</button>
+      </div>
+      <div class="chat-suggestions" id="chatSuggestions">
+        <div class="suggest-chip" onclick="sendSuggestion(this)">¿Qué tengo pendiente esta semana?</div>
+        <div class="suggest-chip" onclick="sendSuggestion(this)">¿Cuál cliente tiene más tareas atrasadas?</div>
+        <div class="suggest-chip" onclick="sendSuggestion(this)">Resume mis tareas de alta prioridad</div>
+        <div class="suggest-chip" onclick="sendSuggestion(this)">¿Qué quedó pendiente de la última reunión?</div>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg ai">
+          <div class="msg-avatar">AI</div>
+          <div class="msg-bubble"><p>Hola Mike 👋 Soy tu asistente de tareas. Tengo acceso a toda tu información — tareas, clientes y reuniones. Pregúntame lo que necesites.</p></div>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <textarea id="chatInput" placeholder="Pregunta algo sobre tus tareas..." rows="1" onkeydown="chatKeydown(event)"></textarea>
+        <button class="btn btn-accent" onclick="sendChat()">Enviar</button>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /body -->
+
+<!-- MODAL NUEVA TAREA -->
+<div class="overlay" id="modalTarea">
+  <div class="modal">
+    <div class="modal-title">Nueva tarea</div>
+    <div class="modal-fields">
+      <div class="field"><label>Tarea *</label><input type="text" id="t_tarea" placeholder="Describe la tarea..."></div>
+      <div class="field"><label>Notas</label><textarea id="t_notas" placeholder="Detalles adicionales..."></textarea></div>
+      <div class="modal-row">
+        <div class="field"><label>Prioridad</label>
+          <select id="t_prioridad"><option>Alta</option><option selected>Media</option><option>Baja</option></select>
+        </div>
+        <div class="field"><label>Estado</label>
+          <select id="t_estado"><option>Pendiente</option><option>Progreso</option><option>Completada</option></select>
+        </div>
+      </div>
+      <div class="modal-row">
+        <div class="field"><label>Cliente</label><select id="t_cliente"></select></div>
+        <div class="field"><label>Fecha límite</label><input type="date" id="t_fecha"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalTarea')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveTarea()">Guardar tarea</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO CLIENTE -->
+<div class="overlay" id="modalCliente">
+  <div class="modal">
+    <div class="modal-title">Nuevo cliente</div>
+    <div class="modal-fields">
+      <div class="field"><label>Nombre *</label><input type="text" id="c_nombre" placeholder="Nombre del cliente..."></div>
+      <div class="field"><label>Color</label>
+        <select id="c_color">
+          <option value="green">Verde (#00ff87)</option>
+          <option value="blue">Azul (#4d9fff)</option>
+          <option value="orange">Naranja (#ffaa00)</option>
+          <option value="purple">Púrpura (#b066ff)</option>
+          <option value="red">Rojo (#ff4d4d)</option>
+          <option value="cyan">Cyan (#00e5ff)</option>
+          <option value="pink">Rosa (#ff66b3)</option>
+          <option value="yellow">Amarillo (#ffe066)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalCliente')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveCliente()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVA REUNION -->
+<div class="overlay" id="modalReunion">
+  <div class="modal">
+    <div class="modal-title">Nueva reunión</div>
+    <div class="modal-fields">
+      <div class="modal-row">
+        <div class="field"><label>Cliente *</label><select id="r_cliente"></select></div>
+        <div class="field"><label>Fecha *</label><input type="date" id="r_fecha"></div>
+      </div>
+      <div class="field"><label>Notas de la reunión</label><textarea id="r_notas" style="min-height:140px" placeholder="Escribe aquí lo que se habló, acuerdos, pendientes..."></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalReunion')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveReunion()">Guardar reunión</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIG -->
+<div class="overlay" id="modalConfig">
+  <div class="cfg-panel">
+    <div class="cfg-title">⚙ Configuración</div>
+    <div class="cfg-fields">
+      <div class="field"><label>Apps Script URL</label><input type="text" id="cfg_script" placeholder="https://script.google.com/macros/s/..."></div>
+      <div class="field"><label>Anthropic API Key</label><input type="text" id="cfg_apikey" placeholder="sk-ant-api03-..."></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalConfig')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveConfig()">Guardar y recargar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><div class="toast-dot ok" id="toastDot"></div><span id="toastMsg"></span></div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════
+const SCRIPT_URL = localStorage.getItem('scriptUrl') || 'https://script.google.com/macros/s/AKfycbyoT5sAC1JPhN67Nq2I1i9CSkyuZVzlb5VB4oYQJKZF-rWGen9tAgYO0vdK_ub6NWnb/exec';
+let API_KEY = localStorage.getItem('anthropicKey') || '';
+
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let state = { clientes: [], tareas: [], reuniones: [] };
+let filters = { search:'', prioridad:[], estado:[], cliente:'' };
+
+const COLOR_MAP = {
+  blue:'#4d9fff', orange:'#ffaa00', green:'#00ff87', purple:'#b066ff',
+  red:'#ff4d4d', cyan:'#00e5ff', pink:'#ff66b3', yellow:'#ffe066'
+};
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+async function init() {
+  setSync('loading','sincronizando...');
+  startLoading();
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=getAll`);
+    const json = await res.json();
+    parseSheetData(json);
+    setSync('ok','sincronizado');
+    toast('Datos cargados ✓');
+  } catch(e) {
+    setSync('error','error de conexión');
+    toast('Error al cargar datos. Verifica la URL del script.', true);
+  }
+  doneLoading();
+  render();
+}
+
+function parseSheetData(json) {
+  const parse = (rows, headers) => {
+    if (!rows || rows.length < 2) return [];
+    const h = rows[0];
+    return rows.slice(1).map((r,i) => {
+      const obj = { _row: i+2 };
+      h.forEach((k,j) => obj[k] = r[j] || '');
+      return obj;
+    }).filter(r => Object.values(r).some(v => v && v !== ''));
+  };
+
+  state.clientes  = parse(json.clientes);
+  state.tareas    = parse(json.tareas);
+  state.reuniones = parse(json.reuniones);
+}
+
+// ══════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════
+function render() {
+  renderBadges();
+  renderTareas();
+  renderClientes();
+  renderReuniones();
+  populateClientSelects();
+  renderClientFilter();
+}
+
+function renderBadges() {
+  const pending = state.tareas.filter(t => t['Estado'] !== 'Completada').length;
+  document.getElementById('badge-tareas').textContent = pending;
+  document.getElementById('badge-clientes').textContent = state.clientes.length;
+  document.getElementById('badge-reuniones').textContent = state.reuniones.length;
+  document.getElementById('tareas-sub').textContent = `${pending} pendientes · ${state.tareas.filter(t=>t['Estado']==='Completada').length} completadas`;
+}
+
+function getClientColor(name) {
+  const c = state.clientes.find(c => c['Nombre'] === name);
+  if (!c) return '#888';
+  return COLOR_MAP[c['Color']] || c['Color'] || '#888';
+}
+
+function renderClientFilter() {
+  const el = document.getElementById('clientFilter');
+  el.innerHTML = '<div class="chip on" onclick="filterClient(\'\',this)">Todos</div>' +
+    state.clientes.map(c => `<div class="chip" onclick="filterClient('${c['Nombre']}',this)" style="border-color:${getClientColor(c['Nombre'])}40">${c['Nombre']}</div>`).join('');
+}
+
+function filterClient(name, el) {
+  filters.cliente = name;
+  document.querySelectorAll('#clientFilter .chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  renderTareas();
+}
+
+function toggleFilter(val) {
+  const priArr = ['Alta','Media','Baja'];
+  const stArr  = ['Pendiente','Progreso'];
+  let arr = priArr.includes(val) ? filters.prioridad : filters.estado;
+  const idx = arr.indexOf(val);
+  if (idx > -1) arr.splice(idx,1); else arr.push(val);
+  // update chips
+  if (priArr.includes(val)) {
+    const map = {Alta:'fAlta',Media:'fMedia',Baja:'fBaja'};
+    document.getElementById(map[val]).classList.toggle('on');
+  } else {
+    const map = {Pendiente:'fPendiente',Progreso:'fProgreso'};
+    document.getElementById(map[val]).classList.toggle('on');
+  }
+  renderTareas();
+}
+
+function filterTareas(list) {
+  return list.filter(t => {
+    const s = filters.search.toLowerCase();
+    if (s && !t['Tarea'].toLowerCase().includes(s) && !(t['Notas']||'').toLowerCase().includes(s)) return false;
+    if (filters.prioridad.length && !filters.prioridad.includes(t['Prioridad'])) return false;
+    if (filters.estado.length && !filters.estado.includes(t['Estado'])) return false;
+    if (filters.cliente && t['Cliente'] !== filters.cliente) return false;
+    return true;
+  });
+}
+
+function renderTareas() {
+  const active = filterTareas(state.tareas.filter(t => t['Estado'] !== 'Completada'));
+  const done   = filterTareas(state.tareas.filter(t => t['Estado'] === 'Completada'));
+
+  document.getElementById('taskList').innerHTML = active.length
+    ? active.map(t => taskCardHTML(t)).join('')
+    : `<div class="empty"><div class="empty-big">✦</div><p class="empty-txt">No hay tareas activas</p></div>`;
+
+  document.getElementById('doneTasks').innerHTML = done.map(t => taskCardHTML(t, true)).join('');
+  document.getElementById('doneCount').textContent = done.length;
+  renderBadges();
+}
+
+function taskCardHTML(t, done=false) {
+  const color = getClientColor(t['Cliente']);
+  const dateStr = t['Fecha límite'] ? formatDate(t['Fecha límite']) : '';
+  const isOver  = t['Fecha límite'] && new Date(t['Fecha límite']) < new Date() && t['Estado'] !== 'Completada';
+  const estado  = t['Estado'] || 'Pendiente';
+  const estadoTag = estado === 'Progreso' ? 'Progreso' : estado;
+
+  return `<div class="task-card p-${t['Prioridad']} ${done?'done':''}" id="tc-${t._row}">
+    <div class="chk ${done?'checked':''}" onclick="toggleDoneTask(${t._row})"></div>
+    <div class="task-body">
+      <div class="task-name" onclick="toggleNotes(${t._row})">${t['Tarea']}</div>
+      <div class="task-meta">
+        <span class="tag tag-${t['Prioridad']}">${t['Prioridad']||''}</span>
+        <span class="tag tag-${estadoTag}">${estadoTag}</span>
+        <span class="task-client-chip" style="background:${color}20;color:${color};border:1px solid ${color}40">${t['Cliente']||''}</span>
+        ${dateStr ? `<span class="task-date ${isOver?'over':''}">${isOver?'⚠ ':''} ${dateStr}</span>` : ''}
+      </div>
+      ${t['Notas'] ? `<div class="task-note-prev" id="np-${t._row}">${t['Notas']}</div>
+      <div class="task-note-full" id="nf-${t._row}">${t['Notas']}</div>` : ''}
+    </div>
+    <div class="task-actions">
+      <select class="task-status-sel" onchange="updateEstado(${t._row},this.value)">
+        ${['Pendiente','Progreso','Completada'].map(s=>`<option ${s===estado?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <button class="icon-btn del" onclick="deleteTarea(${t._row})" title="Eliminar">✕</button>
+    </div>
+  </div>`;
+}
+
+function toggleNotes(row) {
+  const nf = document.getElementById(`nf-${row}`);
+  const np = document.getElementById(`np-${row}`);
+  if (!nf) return;
+  const open = nf.classList.toggle('open');
+  if (np) np.style.display = open ? 'none' : '';
+}
+
+function toggleDone(el) {
+  el.classList.toggle('open');
+  document.getElementById('doneTasks').style.display = el.classList.contains('open') ? 'flex' : 'none';
+}
+
+function renderClientes() {
+  const grid = document.getElementById('clientsGrid');
+  if (!state.clientes.length) { grid.innerHTML = `<div class="empty"><div class="empty-big">◈</div><p class="empty-txt">Sin clientes aún</p></div>`; return; }
+  grid.innerHTML = state.clientes.map(c => {
+    const color = getClientColor(c['Nombre']);
+    const tareas = state.tareas.filter(t => t['Cliente'] === c['Nombre']);
+    const pending = tareas.filter(t => t['Estado'] !== 'Completada').length;
+    const lastR = state.reuniones.filter(r => r['Cliente'] === c['Nombre']).sort((a,b)=> b['Fecha']>a['Fecha']?1:-1)[0];
+    return `<div class="client-card" style="border-top-color:${color}" onclick="filterClient('${c['Nombre']}', document.querySelector('#clientFilter .chip:nth-child(${state.clientes.indexOf(c)+2})'));nav(document.querySelector('[data-section=tareas]'))">
+      <div class="client-name">${c['Nombre']}</div>
+      <div class="client-stats">
+        <div class="cstat"><div class="cstat-val" style="color:${color}">${pending}</div><div class="cstat-lab">Pendientes</div></div>
+        <div class="cstat"><div class="cstat-val">${tareas.length}</div><div class="cstat-lab">Total</div></div>
+        <div class="cstat"><div class="cstat-val">${state.reuniones.filter(r=>r['Cliente']===c['Nombre']).length}</div><div class="cstat-lab">Reuniones</div></div>
+      </div>
+      ${lastR ? `<div class="client-last">Última reunión: ${formatDate(lastR['Fecha'])}</div>` : '<div class="client-last">Sin reuniones aún</div>'}
+    </div>`;
+  }).join('');
+}
+
+function renderReuniones() {
+  const list = document.getElementById('reunionList');
+  if (!state.reuniones.length) { list.innerHTML = `<div class="empty"><div class="empty-big">◎</div><p class="empty-txt">Sin reuniones aún</p></div>`; return; }
+  const sorted = [...state.reuniones].sort((a,b) => b['Fecha'] > a['Fecha'] ? 1 : -1);
+  list.innerHTML = sorted.map(r => {
+    const color = getClientColor(r['Cliente']);
+    return `<div class="reunion-card">
+      <div class="reunion-head" onclick="toggleReunion(this)">
+        <div class="reunion-info">
+          <div class="reunion-client-dot" style="background:${color}"></div>
+          <div>
+            <div class="reunion-title">${r['Cliente']} · ${r['Fecha'] ? formatDate(r['Fecha']) : 'Sin fecha'}</div>
+            <div class="reunion-date">${r['Notas'] ? r['Notas'].substring(0,60)+'...' : 'Sin notas'}</div>
+          </div>
+        </div>
+        <span style="color:var(--muted);font-size:11px">▼</span>
+      </div>
+      <div class="reunion-body">
+        <textarea class="reunion-notes" placeholder="Notas de la reunión..." onblur="saveReunionNotes(${r._row},this.value)">${r['Notas']||''}</textarea>
+        ${r['Resumen IA'] ? `<div class="reunion-summary show"><div class="reunion-summary-title">✦ Resumen IA</div>${r['Resumen IA']}</div>` : ''}
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ai btn-sm" onclick="extractTasks(${r._row}, this)">✦ Extraer tareas con IA</button>
+          <button class="btn btn-ghost btn-sm" onclick="summarizeReunion(${r._row}, this)">◎ Resumir reunión</button>
+        </div>
+        <div class="reunion-ai-result" id="air-${r._row}"></div>
+        <div class="reunion-summary" id="sum-${r._row}">${r['Resumen IA']||''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleReunion(el) {
+  el.classList.toggle('open');
+  el.nextElementSibling.classList.toggle('open');
+}
+
+// ══════════════════════════════════════════
+//  CRUD TAREAS
+// ══════════════════════════════════════════
+function openNewTask() {
+  populateClientSelects();
+  document.getElementById('t_tarea').value = '';
+  document.getElementById('t_notas').value = '';
+  document.getElementById('t_prioridad').value = 'Media';
+  document.getElementById('t_estado').value = 'Pendiente';
+  document.getElementById('t_fecha').value = '';
+  openModal('modalTarea');
+}
+
+async function saveTarea() {
+  const tarea = document.getElementById('t_tarea').value.trim();
+  if (!tarea) { toast('El nombre de la tarea es requerido', true); return; }
+  const data = {
+    action: 'addTarea',
+    'Tarea': tarea,
+    'Notas': document.getElementById('t_notas').value.trim(),
+    'Prioridad': document.getElementById('t_prioridad').value,
+    'Estado': document.getElementById('t_estado').value,
+    'Cliente': document.getElementById('t_cliente').value,
+    'Fecha límite': document.getElementById('t_fecha').value,
+  };
+  closeModal('modalTarea');
+  setSync('loading','guardando...');
+  try {
+    await postScript(data);
+    toast('Tarea guardada ✓');
+    await init();
+  } catch(e) { toast('Error al guardar', true); }
+}
+
+async function toggleDoneTask(row) {
+  const t = state.tareas.find(t => t._row === row);
+  if (!t) return;
+  const newEstado = t['Estado'] === 'Completada' ? 'Pendiente' : 'Completada';
+  await updateEstado(row, newEstado);
+}
+
+async function updateEstado(row, val) {
+  setSync('loading','guardando...');
+  try {
+    await postScript({ action:'updateTarea', row, 'Estado': val });
+    const t = state.tareas.find(t => t._row === row);
+    if (t) t['Estado'] = val;
+    setSync('ok','sincronizado');
+    renderTareas();
+    toast('Estado actualizado ✓');
+  } catch(e) { toast('Error al actualizar', true); setSync('error','error'); }
+}
+
+async function deleteTarea(row) {
+  if (!confirm('¿Eliminar esta tarea?')) return;
+  setSync('loading','eliminando...');
+  try {
+    await postScript({ action:'deleteTarea', row });
+    state.tareas = state.tareas.filter(t => t._row !== row);
+    setSync('ok','sincronizado');
+    renderTareas();
+    toast('Tarea eliminada');
+  } catch(e) { toast('Error al eliminar', true); }
+}
+
+// ══════════════════════════════════════════
+//  CRUD CLIENTES
+// ══════════════════════════════════════════
+function openNewClient() { openModal('modalCliente'); document.getElementById('c_nombre').value = ''; }
+
+async function saveCliente() {
+  const nombre = document.getElementById('c_nombre').value.trim().toUpperCase();
+  if (!nombre) { toast('El nombre es requerido', true); return; }
+  const data = { action:'addCliente', 'Nombre':nombre, 'Color': document.getElementById('c_color').value };
+  closeModal('modalCliente');
+  setSync('loading','guardando...');
+  try {
+    await postScript(data);
+    toast('Cliente creado ✓');
+    await init();
+  } catch(e) { toast('Error al guardar', true); }
+}
+
+// ══════════════════════════════════════════
+//  CRUD REUNIONES
+// ══════════════════════════════════════════
+function openNewReunion() {
+  populateClientSelects();
+  document.getElementById('r_fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('r_notas').value = '';
+  openModal('modalReunion');
+}
+
+async function saveReunion() {
+  const cliente = document.getElementById('r_cliente').value;
+  const fecha   = document.getElementById('r_fecha').value;
+  if (!cliente || !fecha) { toast('Cliente y fecha son requeridos', true); return; }
+  const data = { action:'addReunion', 'Cliente':cliente, 'Fecha':fecha, 'Notas': document.getElementById('r_notas').value.trim(), 'Resumen IA':'' };
+  closeModal('modalReunion');
+  setSync('loading','guardando...');
+  try {
+    await postScript(data);
+    toast('Reunión guardada ✓');
+    await init();
+  } catch(e) { toast('Error al guardar', true); }
+}
+
+async function saveReunionNotes(row, notas) {
+  try {
+    await postScript({ action:'updateReunion', row, 'Notas': notas });
+    const r = state.reuniones.find(r => r._row === row);
+    if (r) r['Notas'] = notas;
+    setSync('ok','sincronizado');
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════
+//  AI — EXTRACT TASKS
+// ══════════════════════════════════════════
+async function extractTasks(row, btn) {
+  if (!API_KEY) { toast('Configura tu API key de Anthropic primero', true); openConfig(); return; }
+  const r = state.reuniones.find(r => r._row === row);
+  if (!r || !r['Notas']) { toast('Agrega notas a la reunión primero', true); return; }
+
+  const resultDiv = document.getElementById(`air-${row}`);
+  resultDiv.classList.add('show');
+  resultDiv.innerHTML = '<div style="color:var(--muted);font-size:11px;padding:8px 0">✦ Analizando notas...</div>';
+  btn.disabled = true;
+
+  try {
+    const prompt = `Analiza las siguientes notas de una reunión de trabajo con el cliente "${r['Cliente']}" y extrae las tareas concretas que quedaron pendientes.
+
+NOTAS:
+${r['Notas']}
+
+Responde SOLO con un JSON válido con este formato exacto, sin texto adicional:
+{"tareas":[{"tarea":"descripción concisa","prioridad":"Alta|Media|Baja","notas":"contexto breve opcional"}]}
+
+Extrae entre 2 y 8 tareas concretas y accionables.`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, messages:[{role:'user',content:prompt}] })
+    });
+    const data = await res.json();
+    const text = data.content[0].text.trim().replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(text);
+
+    resultDiv.innerHTML = `
+      <div style="font-family:'Syne',sans-serif;font-size:10px;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">✦ Tareas sugeridas — selecciona las que quieras guardar</div>
+      <div class="ai-tasks-list">${parsed.tareas.map((t,i)=>`
+        <div class="ai-task-item selected" id="ait-${row}-${i}" onclick="toggleAITask(this)">
+          <div class="ai-task-check"></div>
+          <div class="ai-task-text">${t.tarea}${t.notas?`<div style="font-size:10px;color:var(--muted);margin-top:2px">${t.notas}</div>`:''}</div>
+          <span class="ai-task-pri tag-${t.prioridad}" style="background:${t.prioridad==='Alta'?'rgba(255,77,77,0.12)':t.prioridad==='Media'?'rgba(255,170,0,0.12)':'rgba(0,255,135,0.12)'}; color:${t.prioridad==='Alta'?'var(--high)':t.prioridad==='Media'?'var(--warn)':'var(--low)'}; border:1px solid transparent">${t.prioridad}</span>
+        </div>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-accent btn-sm" onclick="saveAITasks(${row}, ${JSON.stringify(parsed.tareas).replace(/"/g,'&quot;')}, '${r['Cliente']}')">Guardar seleccionadas</button>
+        <button class="btn btn-ghost btn-sm" onclick="this.closest('.reunion-ai-result').classList.remove('show')">Cancelar</button>
+      </div>`;
+  } catch(e) {
+    resultDiv.innerHTML = `<div style="color:var(--high);font-size:11px">Error al procesar con IA. Verifica tu API key.</div>`;
+  }
+  btn.disabled = false;
+}
+
+function toggleAITask(el) { el.classList.toggle('selected'); }
+
+async function saveAITasks(row, tareas, cliente) {
+  const items = document.querySelectorAll(`[id^="ait-${row}-"]`);
+  const selected = Array.from(items).filter(el => el.classList.contains('selected'))
+    .map(el => { const i = parseInt(el.id.split('-')[2]); return tareas[i]; });
+
+  if (!selected.length) { toast('Selecciona al menos una tarea', true); return; }
+  setSync('loading','guardando tareas...');
+  try {
+    for (const t of selected) {
+      await postScript({ action:'addTarea', 'Tarea':t.tarea, 'Notas':t.notas||'', 'Prioridad':t.prioridad, 'Estado':'Pendiente', 'Cliente':cliente, 'Fecha límite':'' });
+    }
+    toast(`${selected.length} tarea(s) guardadas ✓`);
+    await init();
+    document.getElementById(`air-${row}`).classList.remove('show');
+  } catch(e) { toast('Error al guardar', true); setSync('error','error'); }
+}
+
+// ══════════════════════════════════════════
+//  AI — SUMMARIZE
+// ══════════════════════════════════════════
+async function summarizeReunion(row, btn) {
+  if (!API_KEY) { toast('Configura tu API key primero', true); openConfig(); return; }
+  const r = state.reuniones.find(r => r._row === row);
+  if (!r || !r['Notas']) { toast('Agrega notas a la reunión primero', true); return; }
+
+  btn.disabled = true;
+  btn.textContent = '⟳ Resumiendo...';
+
+  try {
+    const prompt = `Resume en 3-4 bullets concisos la siguiente reunión con ${r['Cliente']}. Sé directo y práctico, enfocado en decisiones y pendientes clave.
+
+NOTAS:
+${r['Notas']}
+
+Formato: devuelve solo los bullets con • al inicio, sin título ni introducción.`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:500, messages:[{role:'user',content:prompt}] })
+    });
+    const data = await res.json();
+    const summary = data.content[0].text.trim();
+
+    const sumDiv = document.getElementById(`sum-${row}`);
+    sumDiv.innerHTML = `<div class="reunion-summary-title">✦ Resumen IA</div>${summary.replace(/\n/g,'<br>')}`;
+    sumDiv.classList.add('show');
+
+    await postScript({ action:'updateReunion', row, 'Resumen IA': summary });
+    const rObj = state.reuniones.find(r => r._row === row);
+    if (rObj) rObj['Resumen IA'] = summary;
+    toast('Resumen guardado ✓');
+  } catch(e) { toast('Error al resumir', true); }
+  btn.disabled = false;
+  btn.textContent = '◎ Resumir reunión';
+}
+
+// ══════════════════════════════════════════
+//  AI — CHAT
+// ══════════════════════════════════════════
+let chatHistory = [];
+
+function getContextSummary() {
+  const tareasActivas = state.tareas.filter(t => t['Estado'] !== 'Completada');
+  const hoy = new Date().toISOString().split('T')[0];
+  const atrasadas = tareasActivas.filter(t => t['Fecha límite'] && t['Fecha límite'] < hoy);
+
+  return `Eres el asistente de tareas de Mike, quien trabaja en una agencia de marketing digital en Bogotá.
+
+DATOS ACTUALES (${new Date().toLocaleDateString('es-CO')}):
+
+CLIENTES (${state.clientes.length}):
+${state.clientes.map(c => `- ${c['Nombre']}`).join('\n')}
+
+TAREAS ACTIVAS (${tareasActivas.length} de ${state.tareas.length} total):
+${tareasActivas.map(t => `- [${t['Prioridad']}][${t['Estado']}] ${t['Tarea']} | Cliente: ${t['Cliente']} | Fecha límite: ${t['Fecha límite']||'sin fecha'}`).join('\n')}
+
+TAREAS ATRASADAS (${atrasadas.length}):
+${atrasadas.map(t => `- ${t['Tarea']} | ${t['Cliente']} | venció: ${t['Fecha límite']}`).join('\n') || 'ninguna'}
+
+ÚLTIMAS REUNIONES (${state.reuniones.length} total):
+${[...state.reuniones].sort((a,b)=>b['Fecha']>a['Fecha']?1:-1).slice(0,10).map(r => `- ${r['Cliente']} | ${r['Fecha']} | ${(r['Notas']||'').substring(0,100)}...`).join('\n')}
+
+Responde de forma concisa, directa y en español. Usa formato legible con bullets cuando sea útil.`;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  if (!API_KEY) { toast('Configura tu API key primero', true); openConfig(); return; }
+
+  input.value = '';
+  document.getElementById('chatSuggestions').style.display = 'none';
+  addChatMsg('user', msg);
+  chatHistory.push({ role:'user', content: msg });
+
+  const typingEl = addTyping();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system: getContextSummary(),
+        messages: chatHistory
+      })
+    });
+    const data = await res.json();
+    const reply = data.content[0].text;
+    typingEl.remove();
+    addChatMsg('ai', reply);
+    chatHistory.push({ role:'assistant', content: reply });
+  } catch(e) {
+    typingEl.remove();
+    addChatMsg('ai', 'Error al conectar con la IA. Verifica tu API key.');
+  }
+}
+
+function addChatMsg(role, text) {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `<div class="msg-avatar">${role==='ai'?'AI':'M'}</div>
+    <div class="msg-bubble">${text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^• /gm,'• ')}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function addTyping() {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.innerHTML = `<div class="msg-avatar">AI</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function chatKeydown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }
+function sendSuggestion(el) { document.getElementById('chatInput').value = el.textContent; sendChat(); }
+function clearChat() { chatHistory = []; document.getElementById('chatMessages').innerHTML = `<div class="msg ai"><div class="msg-avatar">AI</div><div class="msg-bubble"><p>Chat limpiado. ¿En qué te ayudo?</p></div></div>`; document.getElementById('chatSuggestions').style.display = 'flex'; }
+
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function populateClientSelects() {
+  const opts = state.clientes.map(c => `<option value="${c['Nombre']}">${c['Nombre']}</option>`).join('');
+  ['t_cliente','r_cliente'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = opts; });
+}
+
+async function postScript(data) {
+  const url = localStorage.getItem('scriptUrl') || SCRIPT_URL;
+  const res = await fetch(url, { method:'POST', body: JSON.stringify(data) });
+  return res.json();
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  try { return new Date(d + 'T12:00:00').toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' }); }
+  catch(e) { return d; }
+}
+
+function nav(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  const sec = el.dataset.section;
+  document.querySelectorAll('.section').forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
+  const target = document.getElementById(`sec-${sec}`);
+  if (target) { target.style.display = 'flex'; target.classList.add('active'); }
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function openConfig() {
+  document.getElementById('cfg_script').value = localStorage.getItem('scriptUrl') || SCRIPT_URL;
+  document.getElementById('cfg_apikey').value = localStorage.getItem('anthropicKey') || '';
+  openModal('modalConfig');
+}
+
+function saveConfig() {
+  const s = document.getElementById('cfg_script').value.trim();
+  const k = document.getElementById('cfg_apikey').value.trim();
+  if (s) localStorage.setItem('scriptUrl', s);
+  if (k) { localStorage.setItem('anthropicKey', k); API_KEY = k; }
+  closeModal('modalConfig');
+  toast('Configuración guardada ✓');
+  init();
+}
+
+function setSync(state, label) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  dot.className = 'sync-dot ' + state;
+  lbl.textContent = label;
+}
+
+function toast(msg, err=false) {
+  const el = document.getElementById('toast');
+  const dot = document.getElementById('toastDot');
+  document.getElementById('toastMsg').textContent = msg;
+  dot.className = 'toast-dot ' + (err ? 'err' : 'ok');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function startLoading() { const b = document.getElementById('loadingBar'); b.className='loading-bar active'; }
+function doneLoading()  { const b = document.getElementById('loadingBar'); b.className='loading-bar done'; setTimeout(()=>b.className='loading-bar',400); }
+
+// close modal on overlay click
+document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
+
+// sections display fix
+document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+document.getElementById('sec-tareas').style.display = 'flex';
+
+init();
+</script>
+</body>
+</html>
