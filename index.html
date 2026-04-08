@@ -636,8 +636,8 @@ textarea{resize:vertical;min-height:80px;line-height:1.6}
       <div class="chat-suggestions" id="chatSuggestions">
         <div class="suggest-chip" onclick="sendSuggestion(this)">¿Qué tengo pendiente esta semana?</div>
         <div class="suggest-chip" onclick="sendSuggestion(this)">¿Cuál cliente tiene más tareas atrasadas?</div>
+        <div class="suggest-chip" onclick="sendSuggestion(this)">Agrega tarea: revisar informe UAN, prioridad alta</div>
         <div class="suggest-chip" onclick="sendSuggestion(this)">Resume mis tareas de alta prioridad</div>
-        <div class="suggest-chip" onclick="sendSuggestion(this)">¿Qué quedó pendiente de la última reunión?</div>
       </div>
       <div class="chat-messages" id="chatMessages">
         <div class="msg ai">
@@ -1076,24 +1076,114 @@ async function summarizeReunion(row,btn){
 
 // CHAT
 let chatHistory=[];
+
 function getContextSummary(){
   const activas=state.tareas.filter(t=>t['Estado']!=='Completada');
   const hoy=new Date().toISOString().split('T')[0];
   const atrasadas=activas.filter(t=>t['Fecha limite']&&toInputDate(t['Fecha limite'])<hoy);
-  return `Eres el asistente de tareas de Michael Espinosa, estratega digital en Bogotá.\n\nCLIENTES: ${state.clientes.map(c=>c['Nombre']).join(', ')}\n\nTAREAS ACTIVAS (${activas.length}):\n${activas.map(t=>`- [${t['Prioridad']}][${t['Estado']}] ${t['Tarea']} | ${t['Cliente']} | ${t['Fecha limite']||'sin fecha'}`).join('\n')}\n\nATRASADAS: ${atrasadas.length?atrasadas.map(t=>`${t['Tarea']} (${t['Cliente']})`).join(', '):'ninguna'}\n\nÚLTIMAS REUNIONES:\n${[...state.reuniones].sort((a,b)=>b['Fecha']>a['Fecha']?1:-1).slice(0,8).map(r=>`- ${r['Cliente']} | ${r['Fecha']} | ${(r['Notas']||'').substring(0,80)}`).join('\n')}\n\nResponde en español, conciso y útil.`;
+  return `Eres el asistente personal de tareas de Michael Espinosa, estratega digital en Bogotá que trabaja con clientes de marketing digital.
+
+CAPACIDADES: Puedes leer información, responder preguntas Y crear tareas directamente en el sistema usando la herramienta crear_tarea. Cuando el usuario pida crear, agregar o registrar una tarea, SIEMPRE usa la herramienta — no solo describas lo que harías.
+
+CLIENTES DISPONIBLES: ${state.clientes.map(c=>c['Nombre']).join(', ')}
+
+TAREAS ACTIVAS (${activas.length}):
+${activas.map(t=>`- [${t['Prioridad']}][${t['Estado']}] ${t['Tarea']} | ${t['Cliente']} | ${t['Fecha limite']||'sin fecha'}`).join('\n')||'Ninguna'}
+
+ATRASADAS: ${atrasadas.length?atrasadas.map(t=>`${t['Tarea']} (${t['Cliente']})`).join(', '):'ninguna'}
+
+ÚLTIMAS REUNIONES:
+${[...state.reuniones].sort((a,b)=>b['Fecha']>a['Fecha']?1:-1).slice(0,6).map(r=>`- ${r['Cliente']} | ${r['Fecha']} | ${(r['Notas']||'').substring(0,80)}`).join('\n')||'Ninguna'}
+
+Responde en español, de forma concisa y directa.`;
 }
+
+const AI_TOOLS = [{
+  name: 'crear_tarea',
+  description: 'Crea una nueva tarea en el sistema de gestión. Úsala cuando el usuario pida agregar, crear o registrar una tarea.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      tarea: {type:'string', description:'Nombre descriptivo de la tarea'},
+      cliente: {type:'string', description:'Nombre exacto del cliente de la lista disponible'},
+      prioridad: {type:'string', enum:['Alta','Media','Baja'], description:'Prioridad de la tarea'},
+      estado: {type:'string', enum:['Pendiente','Progreso'], description:'Estado inicial'},
+      notas: {type:'string', description:'Notas adicionales opcionales'},
+      fecha_limite: {type:'string', description:'Fecha límite en formato YYYY-MM-DD, opcional'}
+    },
+    required:['tarea','cliente','prioridad']
+  }
+}];
 
 async function sendChat(){
   const input=document.getElementById('chatInput'),msg=input.value.trim();
   if(!msg)return;
   input.value='';document.getElementById('chatSuggestions').style.display='none';
-  addChatMsg('user',msg);chatHistory.push({role:'user',content:msg});
+  addChatMsg('user',msg);
+  chatHistory.push({role:'user',content:msg});
   const typingEl=addTyping();
+
   try{
-    const res=await callAI({max_tokens:1000,system:getContextSummary(),messages:chatHistory});
-    const data=await res.json();const reply=data.content[0].text;
-    typingEl.remove();addChatMsg('ai',reply);chatHistory.push({role:'assistant',content:reply});
-  }catch(e){typingEl.remove();addChatMsg('ai','Error de conexión con IA.');}
+    const res=await callAI({
+      max_tokens:1024,
+      system:getContextSummary(),
+      tools:AI_TOOLS,
+      messages:chatHistory
+    });
+    const data=await res.json();
+    typingEl.remove();
+
+    // Check for tool use
+    const toolUseBlock=data.content&&data.content.find(b=>b.type==='tool_use');
+    const textBlock=data.content&&data.content.find(b=>b.type==='text');
+
+    if(toolUseBlock && toolUseBlock.name==='crear_tarea'){
+      const inp=toolUseBlock.input;
+      // Show confirmation bubble
+      const confirmMsg=`Creando tarea: **${inp.tarea}** para **${inp.cliente}** — prioridad ${inp.prioridad}...`;
+      addChatMsg('ai',confirmMsg);
+      chatHistory.push({role:'assistant',content:data.content});
+
+      // Save to Sheet
+      try{
+        await postScript({
+          action:'addTarea',
+          'Tarea':inp.tarea,
+          'Notas':inp.notas||'',
+          'Prioridad':inp.prioridad,
+          'Estado':inp.estado||'Pendiente',
+          'Cliente':inp.cliente,
+          'Fecha limite':inp.fecha_limite||''
+        });
+        // Reload data
+        await init();
+        // Send tool result back to get final response
+        chatHistory.push({role:'user',content:[{
+          type:'tool_result',
+          tool_use_id:toolUseBlock.id,
+          content:'Tarea creada exitosamente en el sistema.'
+        }]});
+        // Get final confirmation from AI
+        const res2=await callAI({max_tokens:300,system:getContextSummary(),tools:AI_TOOLS,messages:chatHistory});
+        const data2=await res2.json();
+        const reply2=data2.content&&data2.content.find(b=>b.type==='text');
+        if(reply2){
+          addChatMsg('ai',reply2.text);
+          chatHistory.push({role:'assistant',content:reply2.text});
+        }
+      }catch(e){
+        addChatMsg('ai','❌ Error al guardar la tarea. Verifica la conexión.');
+      }
+    } else {
+      // Normal text response
+      const reply=textBlock?textBlock.text:(data.content&&data.content[0]&&data.content[0].text)||'Sin respuesta';
+      addChatMsg('ai',reply);
+      chatHistory.push({role:'assistant',content:reply});
+    }
+  }catch(e){
+    typingEl.remove();
+    addChatMsg('ai','Error de conexión con IA.');
+  }
 }
 
 function addChatMsg(role,text){
